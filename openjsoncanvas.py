@@ -1,8 +1,10 @@
+"""A python implmentation of the JsonCanvas format: https://github.com/obsidianmd/jsoncanvas/blob/main/spec/1.0.md"""
 import dataclasses
 import json
 import pathlib
 import re
 import typing
+__version__: str = '1.0.0'
 
 camel_to_name = lambda x: re.sub(r'(?<!^)(?=[A-Z])', '_', x).lower()
 
