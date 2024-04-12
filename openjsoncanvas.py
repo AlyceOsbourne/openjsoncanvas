@@ -1,74 +1,84 @@
-"""A python implementation of the JsonCanvas format: https://github.com/obsidianmd/jsoncanvas/blob/main/spec/1.0.md"""
-import dataclasses
-import json
-import pathlib
-import re
-import typing
-import functools
-import pprint
-__version__: str = '1.0.5'
+"""
+A python implementation of the JsonCanvas format: https://github.com/obsidianmd/jsoncanvas/blob/main/spec/1.0.md
+It allows you to read and write JsonCanvas files in Python, as well as create them from scratch.
+"""
 
-camel_to_name = lambda x: re.sub(r'(?<!^)(?=[A-Z])', '_', x).lower()
+import pydantic, pydantic.alias_generators, typing, pprint, functools, collections.abc
 
-@functools.lru_cache
-def get_leaf_subclass(cls, name):
-    if cls.__subclasses__():
-        for subcls in cls.__subclasses__():
-            if subcls.__subclasses__():
-                return get_leaf_subclass(subcls, name)
-            if subcls.__name__ == name:
-                return subcls
-    return cls
-class CanvasData(typing.MutableMapping):
-    __getattr__ = __getitem__ = lambda self, key: super().__getattribute__(camel_to_name(key))
-    __setattr__ = __setitem__ = lambda self, key, value: super().__setattr__(camel_to_name(key), value)
-    __delattr__ = __delitem__ = lambda self, key: super().__delattr__(camel_to_name(key))
-    __len__ = lambda self: len(self.__dict__)
-    __contains__ = lambda self, key: camel_to_name(key) in self.__dict__
-    __iter__ = lambda self: iter(self.__dict__)
+__version__: str = '2.0.1'
+__spec_version__: str = '1.0'
 
-    def __new__(cls, *args, **kwargs):
-        if cls.__name__ in ['CanvasData', 'Node']:
-            raise TypeError(f'Cannot instantiate {cls.__name__} directly')
-        if not dataclasses.is_dataclass(cls):
-            raise TypeError(f'{cls.__name__} is not a dataclass')
-        return super().__new__(cls)
+class CanvasData(pydantic.BaseModel, collections.abc.MutableMapping):
+    
+    """Base class for all canvas data classes."""
+    
+    def __len__(self) -> int:
+        return len(self.__dict__)
 
-@dataclasses.dataclass(kw_only=True)
+    def __contains__(self, key: str) -> bool:
+        return key in self.__dict__
+
+    def __iter__(self) -> typing.Iterator[str]:
+        return iter(self.__dict__)
+    
+    def __getitem__(self, key: str) -> typing.Any:
+        return getattr(self, key)
+    
+    def __setitem__(self, key: str, value: typing.Any) -> None:
+        setattr(self, key, value)
+        
+    def __delitem__(self, key: str) -> None:
+        delattr(self, key)
+
+    class Config:
+        validate_assignment = True
+        validate_default = True
+        extra = 'allow'
+        
+
 class Node(CanvasData):
+
+    """Base class for all node classes."""
+
     id: str
     type: str
     x: int
     y: int
-    width: int
-    height: int
+    width: int = 100
+    height: int = 100
     color: typing.Optional[str] = None
 
-@dataclasses.dataclass(kw_only=True)
+
 class TextNode(Node):
+    """A node that contains text."""
+    
     text: str
     type: str = 'text'
-    
-@dataclasses.dataclass(kw_only=True)
+
+
 class FileNode(Node):
+    """A node that contains a file."""
     file: str
     type: str = 'file'
     subpath: typing.Optional[str] = None
-    
-@dataclasses.dataclass(kw_only=True)
+
+
 class LinkNode(Node):
+    """A node that contains a link."""
     url: str
     type: str = 'link'
-    
-@dataclasses.dataclass(kw_only=True)
+
+
 class GroupNode(Node):
+    """A node that contains other nodes."""
     type: str = 'group'
     label: typing.Optional[str] = None
     background: typing.Optional[str] = None
     backgroundStyle: typing.Optional[str] = None
-    
-@dataclasses.dataclass(kw_only=True)
+
+
 class Edge(CanvasData):
+    """An edge between two nodes."""
     id: str
     fromNode: str
     toNode: str
@@ -78,63 +88,43 @@ class Edge(CanvasData):
     toEnd: typing.Optional[typing.Literal['none', 'arrow']] = None
     color: typing.Optional[str] = None
     label: typing.Optional[str] = None
-    
-@dataclasses.dataclass(kw_only=True)
-class Canvas:
-    nodes: typing.List[Node] = dataclasses.field(default_factory=list)
-    edges: typing.List[Edge] = dataclasses.field(default_factory=list)
-    
-    def to_json(self):
-        return json.dumps(
-                {
-                        name: [dict(filter(lambda x: x[1] is not None, dataclasses.asdict(obj).items())) for obj in
-                               getattr(self, name)]
-                        for name in ['nodes', 'edges']
-                },
-                indent=4
-        )
-    
-    def add_node(self, node):
-        self.nodes.append(node)
-        return self
-    
-    def add_edge(self, edge):
-        self.edges.append(edge)
-        return self
-    
-    @classmethod
-    def from_json(cls, json_str):
-        data = json.loads(json_str)
-        return cls(
-                nodes=[
-                        get_leaf_subclass(Node, node_data['type'].title() + "Node")(**node_data) 
-                        for node_data in data.get('nodes', [])
-                ],
-                edges=[Edge(**edge_data) for edge_data in data.get('edges', [])]
-        )
-    
-    def to_file(self, path):
-        path = pathlib.Path(path)
-        path.write_text(self.to_json())
-    @classmethod
-    def from_file(cls, path):
-        path = pathlib.Path(path)
-        content = path.read_text()
-        if not content:
-            return cls()
-        return cls.from_json(content)
-    
-    def __str__(self):
-        nodes = pprint.pformat(self.nodes)
-        edges = pprint.pformat(self.edges)
-        # properly indent the nodes and edges
-        nodes = '\n'.join('    ' + line for line in nodes.splitlines())
-        edges = '\n'.join('    ' + line for line in edges.splitlines())
-        return f'Canvas(\n  nodes=\n{nodes}\n  ,\n  edges=\n{edges}\n  \n)'
 
+
+class Canvas(CanvasData):
+    nodes: list[Node] = pydantic.Field(default_factory=list)
+    edges: list[Edge] = pydantic.Field(default_factory=list)
+    
+    def _add(self, prop, obj):
+        getattr(self, prop).append(obj)
+        return self
+
+    def _create(self, type, prop, **kwargs):
+        self._add(prop, type(**kwargs))
+        
+    add_node = functools.partialmethod(_add, 'nodes')
+    add_edge = functools.partialmethod(_add, 'edges')
+
+    create_text_node = functools.partialmethod(_create, TextNode, 'nodes')
+    create_file_node = functools.partialmethod(_create, FileNode, 'nodes')
+    create_link_node = functools.partialmethod(_create, LinkNode, 'nodes')
+    create_group_node = functools.partialmethod(_create, GroupNode, 'nodes')
+    
+    create_edge = functools.partialmethod(_create, Edge, 'edges')
+    
+    def to_file(self, path: str):
+        with open(path, 'w') as f:
+            f.write(self.model_dump_json())
+            
+    @classmethod
+    def from_file(cls, path: str):
+        return cls.parse_file(path)
+    
     
 if __name__ == '__main__':
-    path = r"G:\vault\Wiki\Untitled.canvas"
-    #canvas = Canvas.from_file(path)
-    #print(canvas)
-    print(json.load(open(path)))
+    canvas = Canvas()
+    canvas.create_text_node(id='1', x=0, y=0, width=100, height=100, text='Hello, World!')
+    canvas.create_file_node(id='2', x=100, y=100, width=100, height=100, file='example.md')
+    canvas.create_link_node(id='3', x=200, y=200, width=100, height=100, url='https://example.com')
+    canvas.create_group_node(id='4', x=300, y=300, width=100, height=100)
+    canvas.create_edge(id='5', fromNode='1', toNode='2', fromEnd='arrow', toEnd='arrow', color='red', label='Edge')
+    pprint.pprint(canvas.dict())

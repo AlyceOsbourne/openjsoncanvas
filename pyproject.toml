@@ -9,5 +9,10 @@ license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
 readme = {file = "README", content-type = "text/markdown"}
+dependencies = [
+    "pydantic",
+]
+
 [project.urls]
 Home = "https://github.com/AlyceOsbourne/openjsoncanvas"
+

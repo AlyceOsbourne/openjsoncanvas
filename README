@@ -1,61 +1,41 @@
+
 # JsonCanvas Python Implementation
 
-This project provides a Python implementation of the [JsonCanvas format](https://github.com/obsidianmd/jsoncanvas/blob/main/spec/1.0.md), designed to enable the creation, manipulation, and serialization of a structured canvas representation. It is built using Python's `dataclasses` for easy data management and supports various node types including Text, File, Link, Group, and Edge elements.
+This project provides a Python implementation of the [JsonCanvas format](https://github.com/obsidianmd/jsoncanvas/blob/main/spec/1.0.md), designed to facilitate the creation, manipulation, and visualization of a structured canvas using objects and relations. It leverages Python's `pydantic` library to ensure data validation and management, supporting a range of node and edge types for comprehensive canvas construction.
 
 ## Features
 
-- Define and manipulate canvas elements like Nodes and Edges.
-- Serialize and deserialize canvas data to and from JSON.
-- Easy integration with file systems for reading and writing canvas data.
+- Robust model definitions for canvas elements (Nodes and Edges) with comprehensive validation and default settings via `pydantic`.
+- Dynamic addition and manipulation of various node types including Text, File, Link, Group, and Edge elements.
+- Enhanced canvas operations allowing easy addition of nodes and edges with automated type handling.
+- Serialize canvas structures to standard Python dictionaries for easy integration with other systems.
 
 ## Installation
 
-`pip install openjsoncanvas`
+```bash
+pip install openjsoncanvas
+```
 
 ## Usage
 
 ### Creating a Canvas
 
-You can create a canvas programmatically by adding nodes and edges:
+Instantiate and manipulate a canvas with various nodes and edges:
 
 ```python
-from openjsoncanvas import Canvas, TextNode, LinkNode, Edge
+from openjsoncanvas import Canvas
 
-# Create a new canvas
+# Initialize a new canvas
 canvas = Canvas()
 
-# Add nodes
-canvas.add_node(TextNode(id='1', x=100, y=100, width=200, height=100, text='Hello World'))
-canvas.add_node(LinkNode(id='2', x=300, y=100, width=200, height=100, url='https://example.com'))
+# Adding nodes and edges
+canvas.create_text_node(id='1', x=0, y=0, width=100, height=100, text='Hello, World!')
+canvas.create_file_node(id='2', x=100, y=100, width=100, height=100, file='example.md')
+canvas.create_link_node(id='3', x=200, y=200, width=100, height=100, url='https://example.com')
+canvas.create_group_node(id='4', x=300, y=300, width=100, height=100)
+canvas.create_edge(id='5', fromNode='1', toNode='2', fromEnd='arrow', toEnd='arrow', color='red', label='Edge')
 
-# Add an edge
-canvas.add_edge(Edge(id='1', fromNode='1', toNode='2'))
-
-# Serialize to JSON
-json_output = canvas.to_json()
-print(json_output)
-
-# Write to file
-canvas.to_file('example.canvas')
+# Print canvas structure
+import pprint
+pprint.pprint(canvas.dict())
 ```
-
-### Loading from JSON
-
-You can load a canvas from a JSON string or file:
-
-```python
-# Load from JSON string
-json_str = '{"nodes": [{"id": "1", "type": "text", "x": 100, "y": 100, "width": 200, "height": 100, "text": "Hello World"}]}'
-loaded_canvas = Canvas.from_json(json_str)
-
-# Load from a file
-loaded_canvas = Canvas.from_file('path_to_your_canvas_file.canvas')
-```
-
-## Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests to our repository.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
