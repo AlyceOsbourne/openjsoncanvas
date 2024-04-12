@@ -1,6 +1,3 @@
-Based on your provided Python implementation of the JsonCanvas format, here's a detailed README file. This README includes an overview, installation instructions, usage examples, and additional details that may be helpful for users of your project.
-
-```markdown
 # JsonCanvas Python Implementation
 
 This project provides a Python implementation of the [JsonCanvas format](https://github.com/obsidianmd/jsoncanvas/blob/main/spec/1.0.md), designed to enable the creation, manipulation, and serialization of a structured canvas representation. It is built using Python's `dataclasses` for easy data management and supports various node types including Text, File, Link, Group, and Edge elements.
@@ -22,7 +19,7 @@ This project provides a Python implementation of the [JsonCanvas format](https:/
 You can create a canvas programmatically by adding nodes and edges:
 
 ```python
-from your_module_name import Canvas, TextNode, LinkNode, Edge
+from openjsoncanvas import Canvas, TextNode, LinkNode, Edge
 
 # Create a new canvas
 canvas = Canvas()
@@ -62,4 +59,3 @@ Contributions are welcome! Feel free to open issues or submit pull requests to o
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-```
