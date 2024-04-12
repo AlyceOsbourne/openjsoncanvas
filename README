@@ -25,17 +25,15 @@ Instantiate and manipulate a canvas with various nodes and edges:
 ```python
 from openjsoncanvas import Canvas
 
-# Initialize a new canvas
 canvas = Canvas()
 
-# Adding nodes and edges
 canvas.create_text_node(id='1', x=0, y=0, width=100, height=100, text='Hello, World!')
 canvas.create_file_node(id='2', x=100, y=100, width=100, height=100, file='example.md')
 canvas.create_link_node(id='3', x=200, y=200, width=100, height=100, url='https://example.com')
 canvas.create_group_node(id='4', x=300, y=300, width=100, height=100)
 canvas.create_edge(id='5', fromNode='1', toNode='2', fromEnd='arrow', toEnd='arrow', color='red', label='Edge')
 
-# Print canvas structure
-import pprint
-pprint.pprint(canvas.dict())
+# you can save and load the canvas to/from a file
+canvas.to_file('my_canvas.canvas')
+canvas = Canvas.from_file('my_canvas.canvas')
 ```

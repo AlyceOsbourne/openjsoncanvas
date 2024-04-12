@@ -5,7 +5,7 @@ It allows you to read and write JsonCanvas files in Python, as well as create th
 
 import pydantic, pydantic.alias_generators, typing, pprint, functools, collections.abc
 
-__version__: str = '2.0.1'
+__version__: str = '2.0.2'
 __spec_version__: str = '1.0'
 
 class CanvasData(pydantic.BaseModel, collections.abc.MutableMapping):
@@ -127,4 +127,6 @@ if __name__ == '__main__':
     canvas.create_link_node(id='3', x=200, y=200, width=100, height=100, url='https://example.com')
     canvas.create_group_node(id='4', x=300, y=300, width=100, height=100)
     canvas.create_edge(id='5', fromNode='1', toNode='2', fromEnd='arrow', toEnd='arrow', color='red', label='Edge')
-    pprint.pprint(canvas.dict())
+    
+    canvas.to_file('example.canvas')
+    pprint.pprint(Canvas.from_file('example.canvas').dict())
