@@ -1,8 +1,8 @@
-import json
 import dataclasses
-import typing
-import re
+import json
 import pathlib
+import re
+import typing
 
 camel_to_name = lambda x: re.sub(r'(?<!^)(?=[A-Z])', '_', x).lower()
 
@@ -35,6 +35,7 @@ class Node(CanvasData):
 class TextNode(Node):
     text: str
     type: str = 'text'
+    
     
 @dataclasses.dataclass(kw_only=True)
 class FileNode(Node):
