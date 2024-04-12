@@ -6,7 +6,7 @@ import re
 import typing
 import functools
 import pprint
-__version__: str = '1.0.1'
+__version__: str = '1.0.3'
 
 camel_to_name = lambda x: re.sub(r'(?<!^)(?=[A-Z])', '_', x).lower()
 

@@ -8,6 +8,6 @@ authors = [{name = "Alyce Osbourne"}]
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
-
+readme = {file = "README", content-type = "text/markdown"}
 [project.urls]
 Home = "https://github.com/AlyceOsbourne/openjsoncanvas"
