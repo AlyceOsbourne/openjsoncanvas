@@ -1,13 +1,24 @@
-"""A python implmentation of the JsonCanvas format: https://github.com/obsidianmd/jsoncanvas/blob/main/spec/1.0.md"""
+"""A python implementation of the JsonCanvas format: https://github.com/obsidianmd/jsoncanvas/blob/main/spec/1.0.md"""
 import dataclasses
 import json
 import pathlib
 import re
 import typing
-__version__: str = '1.0.0'
+import functools
+import pprint
+__version__: str = '1.0.1'
 
 camel_to_name = lambda x: re.sub(r'(?<!^)(?=[A-Z])', '_', x).lower()
 
+@functools.lru_cache
+def get_leaf_subclass(cls, name):
+    if cls.__subclasses__():
+        for subcls in cls.__subclasses__():
+            if subcls.__subclasses__():
+                return get_leaf_subclass(subcls, name)
+            if subcls.__name__ == name:
+                return subcls
+    return cls
 class CanvasData(typing.MutableMapping):
     __getattr__ = __getitem__ = lambda self, key: super().__getattribute__(camel_to_name(key))
     __setattr__ = __setitem__ = lambda self, key, value: super().__setattr__(camel_to_name(key), value)
@@ -38,7 +49,6 @@ class TextNode(Node):
     text: str
     type: str = 'text'
     
-    
 @dataclasses.dataclass(kw_only=True)
 class FileNode(Node):
     file: str
@@ -61,11 +71,11 @@ class GroupNode(Node):
 class Edge(CanvasData):
     id: str
     fromNode: str
-    fromSide: typing.Optional[str] = None
-    fromEnd: typing.Optional[str] = None
     toNode: str
-    toSide: typing.Optional[str] = None
-    toEnd: typing.Optional[str] = None
+    fromSide: typing.Optional[typing.Literal['top', 'right', 'bottom', 'left']] = None
+    toSide: typing.Optional[typing.Literal['top', 'right', 'bottom', 'left']] = None
+    fromEnd: typing.Optional[typing.Literal['none', 'arrow']] = None
+    toEnd: typing.Optional[typing.Literal['none', 'arrow']] = None
     color: typing.Optional[str] = None
     label: typing.Optional[str] = None
     
@@ -96,14 +106,16 @@ class Canvas:
     def from_json(cls, json_str):
         data = json.loads(json_str)
         return cls(
-                nodes=[globals()[node_data['type'].title() + 'Node'](**node_data) for node_data in (data).get('nodes', [])], 
+                nodes=[
+                        get_leaf_subclass(Node, node_data['type'].title() + "Node")(**node_data) 
+                        for node_data in data.get('nodes', [])
+                ],
                 edges=[Edge(**edge_data) for edge_data in data.get('edges', [])]
         )
     
     def to_file(self, path):
         path = pathlib.Path(path)
         path.write_text(self.to_json())
-        
     @classmethod
     def from_file(cls, path):
         path = pathlib.Path(path)
@@ -111,10 +123,18 @@ class Canvas:
         if not content:
             return cls()
         return cls.from_json(content)
+    
+    def __str__(self):
+        nodes = pprint.pformat(self.nodes)
+        edges = pprint.pformat(self.edges)
+        # properly indent the nodes and edges
+        nodes = '\n'.join('    ' + line for line in nodes.splitlines())
+        edges = '\n'.join('    ' + line for line in edges.splitlines())
+        return f'Canvas(\n  nodes=\n{nodes}\n  ,\n  edges=\n{edges}\n  \n)'
 
     
 if __name__ == '__main__':
     path = r"G:\vault\Wiki\Untitled.canvas"
-    canvas = Canvas.from_file(path)
-    canvas.add_node(TextNode(id='1', x=100, y=100, width=100, height=100, text='Hello World'))
-    canvas.to_file(path)
+    #canvas = Canvas.from_file(path)
+    #print(canvas)
+    print(json.load(open(path)))
