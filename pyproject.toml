@@ -8,7 +8,7 @@ authors = [{name = "Alyce Osbourne"}]
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
-readme = {file = "README", content-type = "text/markdown"}
+readme = {file = "README.md", content-type = "text/markdown"}
 dependencies = [
     "pydantic",
 ]

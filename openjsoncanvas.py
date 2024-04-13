@@ -3,15 +3,19 @@ A python implementation of the JsonCanvas format: https://github.com/obsidianmd/
 It allows you to read and write JsonCanvas files in Python, as well as create them from scratch.
 """
 
-import pydantic, pydantic.alias_generators, typing, pprint, functools, collections.abc
+import collections.abc
+import functools
 
-__version__: str = '2.0.3'
+import pydantic.alias_generators
+import typing
+
+__version__: str = '2.0.4'
 __spec_version__: str = '1.0'
 
+
 class CanvasData(pydantic.BaseModel, collections.abc.MutableMapping):
-    
     """Base class for all canvas data classes."""
-    
+
     def __len__(self) -> int:
         return len(self.__dict__)
 
@@ -20,24 +24,26 @@ class CanvasData(pydantic.BaseModel, collections.abc.MutableMapping):
 
     def __iter__(self) -> typing.Iterator[str]:
         return iter(self.__dict__)
-    
+
     def __getitem__(self, key: str) -> typing.Any:
         return getattr(self, key)
-    
+
     def __setitem__(self, key: str, value: typing.Any) -> None:
         setattr(self, key, value)
-        
+
     def __delitem__(self, key: str) -> None:
         delattr(self, key)
 
     class Config:
-        validate_assignment = True
+        validate_assignment = False
         validate_default = True
         extra = 'allow'
         
+    def __hash__(self):
+        return getattr(self, 'id', None)
+
 
 class Node(CanvasData):
-
     """Base class for all node classes."""
 
     id: str
@@ -51,7 +57,7 @@ class Node(CanvasData):
 
 class TextNode(Node):
     """A node that contains text."""
-    
+
     text: str
     type: str = 'text'
 
@@ -91,29 +97,29 @@ class Edge(CanvasData):
 
 
 class Canvas(CanvasData):
-    nodes: list[Node] = pydantic.Field(default_factory=list)
-    edges: list[Edge] = pydantic.Field(default_factory=list)
-    
+    nodes: list[Node] = pydantic.Field(default_factory = list)
+    edges: list[Edge] = pydantic.Field(default_factory = list)
+
     def _add(self, prop, obj):
         getattr(self, prop).append(obj)
         return self
-    
+
     def _add_many(self, prop, objs):
         getattr(self, prop).extend(objs)
         return self
 
     def _create(self, type, prop, **kwargs):
         self._add(prop, type(**kwargs))
-        
+
     def _delete(self, prop, obj):
-        getattr(self, prop).remove(obj)
+        setattr(self, prop, list(filter(lambda x: x.id != obj.id, getattr(self, prop))))
         return self
     
     def _delete_many(self, prop, objs):
         for obj in objs:
             self._delete(prop, obj)
         return self
-        
+
     add_node = functools.partialmethod(_add, 'nodes')
     add_nodes = functools.partialmethod(_add_many, 'nodes')
     add_edge = functools.partialmethod(_add, 'edges')
@@ -123,34 +129,35 @@ class Canvas(CanvasData):
     create_file_node = functools.partialmethod(_create, FileNode, 'nodes')
     create_link_node = functools.partialmethod(_create, LinkNode, 'nodes')
     create_group_node = functools.partialmethod(_create, GroupNode, 'nodes')
-    
+
     create_edge = functools.partialmethod(_create, Edge, 'edges')
-    
+
     delete_node = functools.partialmethod(_delete, 'nodes')
     delete_edge = functools.partialmethod(_delete, 'edges')
-    
+
     delete_nodes = functools.partialmethod(_delete_many, 'nodes')
     delete_edges = functools.partialmethod(_delete_many, 'edges')
-    
+
+
     def clear_canvas(self):
         self.nodes.clear()
         self.edges.clear()
         return self
-    
+
     def to_file(self, path: str):
         with open(path, 'w') as f:
             f.write(self.model_dump_json())
-            
+
     @classmethod
     def from_file(cls, path: str):
         return cls.parse_file(path)
-    
-    
+
+
 if __name__ == '__main__':
     canvas = Canvas()
-    canvas.create_text_node(id='1', x=0, y=0, width=100, height=100, text='Hello, World!')
-    canvas.create_file_node(id='2', x=100, y=100, width=100, height=100, file='example.md')
-    canvas.create_link_node(id='3', x=200, y=200, width=100, height=100, url='https://example.com')
-    canvas.create_group_node(id='4', x=300, y=300, width=100, height=100)
-    canvas.create_edge(id='5', fromNode='1', toNode='2', fromEnd='arrow', toEnd='arrow', color='red', label='Edge')
-  
+    canvas.create_text_node(id = '1', x = 0, y = 0, width = 100, height = 100, text = 'Hello, World!')
+    canvas.create_file_node(id = '2', x = 100, y = 100, width = 100, height = 100, file = 'example.md')
+    canvas.create_link_node(id = '3', x = 200, y = 200, width = 100, height = 100, url = 'https://example.com')
+    canvas.create_group_node(id = '4', x = 300, y = 300, width = 100, height = 100)
+    canvas.delete_nodes(objs = canvas.nodes)
+    print(canvas.nodes)
