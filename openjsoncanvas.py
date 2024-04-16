@@ -8,7 +8,7 @@ from itertools import chain
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
-from typing import Any, Iterator, Literal, Optional, Type, Self
+from typing import Any, Iterator, Literal, Optional, Type
 
 __version__: str = '3.0.0'
 __spec_version__: str = '1.0'
@@ -126,11 +126,11 @@ class Canvas(BaseModel):
 
     ### core
 
-    def __add(self, *objs: CanvasData, __prop: str) -> Self:
+    def __add(self, *objs: CanvasData, __prop: str):
         getattr(self, __prop).extend(objs)
         return self
 
-    def __create(self, *, __type: Type[CanvasData] | str, __prop: str, **kwargs) -> Self:
+    def __create(self, *, __type: Type[CanvasData] | str, __prop: str, **kwargs):
         if isinstance(__type, str):
             if not (__type := self.__class_getitem__(__type)):
                 raise ValueError(f'Could not find class with name: {__type}')
@@ -145,12 +145,12 @@ class Canvas(BaseModel):
                 return node
         return None
 
-    def __update(self, obj: CanvasData, **kwargs) -> Self:
+    def __update(self, obj: CanvasData, **kwargs):
         for key, value in kwargs.items():
             setattr(obj, key, value)
         return self
 
-    def __delete(self, *objs: CanvasData, __prop: str) -> Self:
+    def __delete(self, *objs: CanvasData, __prop: str):
         setattr(self, __prop, [item for item in getattr(self, __prop) if item.id not in {obj.id for obj in objs}])
         if __prop != 'edges':
             ids = {obj.id for obj in objs}
@@ -171,7 +171,7 @@ class Canvas(BaseModel):
     def _(self, obj: Edge) -> tuple[Node]:
         return [node for node in self.nodes if node.id in {obj.fromNode, obj.toNode}]
 
-    def clear_canvas(self) -> Self:
+    def clear_canvas(self):
         self.nodes.clear()
         self.edges.clear()
         return self
@@ -226,7 +226,7 @@ class Canvas(BaseModel):
     delete_nodes = partialmethod(__delete, _Canvas__prop = 'nodes')
     delete_edges = partialmethod(__delete, _Canvas__prop = 'edges')
 
-    def link_nodes(self, fromNode: Node | str, toNode: Node | str, **kwargs) -> Self:
+    def link_nodes(self, fromNode: Node | str, toNode: Node | str, **kwargs):
         match fromNode, toNode:
             case Node(), Node():
                 self.create_edge(fromNode = fromNode.id, toNode = toNode.id, **kwargs)
